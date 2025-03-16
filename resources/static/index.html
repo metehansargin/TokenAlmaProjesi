@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Token Sistemi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h2>Giriş Yap</h2>
+            <div class="form-group">
+                <input type="email" id="email" placeholder="E-posta" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="Parola" required>
+            </div>
+            <button onclick="login()">Giriş Yap</button>
+            
+            <div class="register-link">
+                <p>Hesabınız yok mu? <a href="#" onclick="showRegisterForm()">Kayıt Ol</a></p>
+            </div>
+
+            <div id="token-info" class="token-info" style="display: none;">
+                <h3>Token Bilgileri</h3>
+                <p id="token-text"></p>
+                <p id="token-expiry"></p>
+            </div>
+
+            <div id="error-message" class="error-message"></div>
+        </div>
+
+        <!-- Kayıt Formu -->
+        <div class="login-box" id="register-form" style="display: none;">
+            <h2>Kayıt Ol</h2>
+            <div class="form-group">
+                <input type="text" id="firstname" placeholder="Ad" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="lastname" placeholder="Soyad" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="register-email" placeholder="E-posta" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="register-password" placeholder="Parola" required>
+            </div>
+            <button onclick="register()">Kayıt Ol</button>
+            <div class="register-link">
+                <p>Zaten hesabınız var mı? <a href="#" onclick="showLoginForm()">Giriş Yap</a></p>
+            </div>
+            <div id="register-error-message" class="error-message"></div>
+        </div>
+    </div>
+
+    <script>
+        function showRegisterForm() {
+            document.querySelector('.login-box').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+        }
+
+        function showLoginForm() {
+            document.querySelector('.login-box').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+        }
+
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
+            const tokenInfo = document.getElementById('token-info');
+            const tokenText = document.getElementById('token-text');
+            const tokenExpiry = document.getElementById('token-expiry');
+
+            fetch('/api/v1/auth/authenticate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Giriş başarısız');
+                }
+                return response.json();
+            })
+            .then(data => {
+                errorDiv.style.display = 'none';
+                tokenInfo.style.display = 'block';
+                tokenText.textContent = 'Token: ' + data.token.substring(0, 20) + '...';
+                
+                // Token süresini hesapla (24 saat)
+                const expiryDate = new Date();
+                expiryDate.setHours(expiryDate.getHours() + 24);
+                tokenExpiry.textContent = 'Token Geçerlilik Süresi: ' + expiryDate.toLocaleString();
+            })
+            .catch(error => {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = error.message;
+                tokenInfo.style.display = 'none';
+            });
+        }
+
+        function register() {
+            const firstname = document.getElementById('firstname').value;
+            const lastname = document.getElementById('lastname').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const errorDiv = document.getElementById('register-error-message');
+
+            fetch('/api/v1/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firstname: firstname,
+                    lastname: lastname,
+                    email: email,
+                    password: password
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Kayıt başarısız');
+                }
+                return response.json();
+            })
+            .then(data => {
+                errorDiv.style.display = 'none';
+                alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+                showLoginForm();
+            })
+            .catch(error => {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = error.message;
+            });
+        }
+    </script>
+</body>
+</html> 
